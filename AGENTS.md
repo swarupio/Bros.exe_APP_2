@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-This is the Kayda Sathi pnpm workspace. `apps/mobile` is the Next.js App Router web app; it produces `out/` for the web deploy and the later Capacitor Android wrapper. `apps/api` holds the Fastify API and server-only integrations. `packages/shared` owns Zod contracts and pure helpers shared by the app and API. `packages/knowledge` contains legal-knowledge packs, resource and emergency data, validation scripts, and safety checks. `supabase/migrations` is the database and RLS source of truth. `Kayda_Sathi_Final_PRD.md` contains the full product requirements.
+This is the Kayda Sathi pnpm workspace. `apps/mobile` is the Next.js App Router web app; it exports to `out/` for web and Capacitor. `apps/mobile/android` is generated native Android code. `apps/api` holds the Fastify API and server-only integrations. `packages/shared` owns Zod contracts and pure helpers shared by the app and API. `packages/knowledge` contains legal-knowledge packs, resource and emergency data, validation scripts, and safety checks. `supabase/migrations` is the database and RLS source of truth. `Kayda_Sathi_Final_PRD.md` contains the full product requirements.
 
 ## Commands
 
@@ -16,6 +16,7 @@ Use Node 22.11 or newer and the pnpm version declared in the root `package.json`
 - `pnpm test` runs workspace test scripts.
 - `pnpm validate:knowledge` checks knowledge/resource JSON and verification metadata.
 - `pnpm check:safety` exercises emergency matching, including negation examples.
+- `pnpm --filter @kayda-sathi/mobile cap:android:add` creates the Android project once; `pnpm --filter @kayda-sathi/mobile android:debug` exports web assets, syncs Capacitor, and builds the debug APK (Android Studio/SDK required).
 
 Keep environment credentials in ignored `.env` files; commit only placeholder `.env.example` values. Never put provider or Supabase service-role secrets in the Next.js client.
 

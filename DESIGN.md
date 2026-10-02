@@ -17,13 +17,13 @@ Use a calm, clear interface for people seeking help with stressful situations. T
 
 | Token | Light default | Use |
 |---|---|---|
-| Background | `#F2F4F8` | App canvas, with subtle cool-blue ambient light |
-| Surface | `#FFFFFF` | Content cards, forms, and reading areas |
-| Primary text | `#172033` | Headings and body copy |
-| Secondary text | `#526078` | Supporting text with readable contrast |
-| Accent | `#1769D2` | Primary action, links, selected state |
+| Background | `#EFF7FE` | Cool blue-white canvas sampled from the generated screens |
+| Surface | `#FEFEFE` | Opaque content cards, forms, and reading areas |
+| Primary text | `#071B43` | Deep navy headings and body copy |
+| Secondary text | `#536985` | Muted supporting text with readable contrast |
+| Accent | `#1877F5` | Bright blue primary action and selected state |
 | Positive / caution / urgent | `#25845A` / `#A76600` / `#B42332` | Pair color with a label or icon |
-| Glass fill | `rgba(255,255,255,.72)` | Floating control chrome only |
+| Glass fill | `rgba(250,253,255,.76)` | Floating control chrome only |
 | Glass blur | `22px` | Use sparingly on supported browsers |
 | Glass edge | `rgba(255,255,255,.88)` top; `rgba(100,125,160,.18)` sides | Soft top highlight and visible boundary |
 | Content radius | `20–24px` | Opaque cards and grouped content |

@@ -1,5 +1,6 @@
-import { AppView } from "@/components/app-view";
+import { AppShell } from "@/components/app-shell";
+import { IntakeScreen } from "@/components/screens/intake-screen";
 
 export default function NewCase() {
-  return <AppView screen="new" />;
+  return <AppShell><IntakeScreen/></AppShell>;
 }

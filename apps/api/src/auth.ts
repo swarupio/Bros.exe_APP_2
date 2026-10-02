@@ -2,12 +2,31 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 export type AuthVerifier = (token: string) => Promise<string | null>;
 
+export function createSupabaseTokenVerifier(url: string, publishableKey: string, request: typeof fetch = fetch): AuthVerifier {
+  const baseUrl = url.replace(/\/$/, "");
+  return async token => {
+    try {
+      const response = await request(`${baseUrl}/auth/v1/user`, {
+        headers: { apikey: publishableKey, Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (!response.ok) return null;
+      const user = await response.json() as { id?: unknown };
+      return typeof user.id === "string" && /^[0-9a-f-]{36}$/i.test(user.id) ? user.id : null;
+    } catch {
+      return null;
+    }
+  };
+}
+
 declare module "fastify" {
   interface FastifyRequest { userId: string | null }
   interface FastifyInstance { requireAuth(request: FastifyRequest, reply: FastifyReply): Promise<void> }
 }
 
-export function registerAuth(app: FastifyInstance, verifyToken?: AuthVerifier): void {
+export function registerAuth(app: FastifyInstance, verifyToken: AuthVerifier | undefined = process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY
+  ? createSupabaseTokenVerifier(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY)
+  : undefined): void {
   app.decorateRequest("userId", null);
   app.decorate("requireAuth", async (request, reply) => {
     if (!verifyToken) return reply.code(503).send({ error: { code: "AUTH_NOT_CONFIGURED", message: "Authentication is not configured", retryable: false } });

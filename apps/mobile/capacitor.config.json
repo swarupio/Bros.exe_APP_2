@@ -1,0 +1,9 @@
+{
+  "appId": "com.kaydasathi.app",
+  "appName": "Kayda Sathi",
+  "webDir": "out",
+  "backgroundColor": "#F4F8FC",
+  "android": {
+    "webContentsDebuggingEnabled": false
+  }
+}

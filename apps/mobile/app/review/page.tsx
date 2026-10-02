@@ -1,5 +1,6 @@
-import { AppView } from "@/components/app-view";
+import { AppShell } from "@/components/app-shell";
+import { ReviewScreen } from "@/components/screens/review-screen";
 
 export default function Review() {
-  return <AppView screen="review" />;
+  return <AppShell><ReviewScreen/></AppShell>;
 }

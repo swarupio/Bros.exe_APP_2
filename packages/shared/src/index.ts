@@ -3,6 +3,17 @@ import { z } from "zod";
 export const uuidSchema = z.string().uuid();
 export const amountSchema = z.object({ inr: z.number().int().nonnegative() }).strict();
 export const supportedLanguageSchema = z.enum(["en", "hi", "mr"]);
+export const fastChatRequestSchema = z.object({
+  language: supportedLanguageSchema,
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(1200) }).strict()).min(1).max(10),
+}).strict().refine(input => input.messages.at(-1)?.role === "user", "The newest chat message must come from the user");
+export const fastChatResponseSchema = z.object({ reply: z.string().trim().min(1).max(8000) }).strict();
+export const fastTranscriptionRequestSchema = z.object({
+  language: supportedLanguageSchema,
+  mime_type: z.string().regex(/^audio\/(webm|ogg|mp4|mpeg|wav|flac|x-m4a)(;codecs=opus)?$/).max(40),
+  audio_base64: z.string().regex(/^[A-Za-z0-9+/]+={0,2}$/).max(11_000_000),
+}).strict();
+export const fastTranscriptionResponseSchema = z.object({ text: z.string().trim().min(1).max(12000) }).strict();
 
 export const factSchema = z.object({
   id: uuidSchema.optional(), key: z.string().regex(/^[a-z][a-z0-9_]*$/).max(80), label: z.string().trim().min(1).max(160),
@@ -107,3 +118,21 @@ export function validFactValue(fact: Pick<Fact,'kind'|'value'|'status'>): boolea
     default: return typeof fact.value==='string' && fact.value.length>0 && fact.value.length<=1000;
   }
 }
+
+// API snapshots preserve database metadata while validating fields used by the app.
+export const caseSummarySchema = z.object({
+  id: uuidSchema, title: z.string(), status: z.enum(["open", "resolved", "archived"]),
+  urgency: z.enum(["none", "elevated", "urgent"]), rev: z.number().int().positive(), updated_at: z.string(),
+}).passthrough();
+export const caseSnapshotSchema = z.object({
+  case: caseSummarySchema.extend({ original_account: z.string(), current_plan_revision: z.number().int().nullable() }),
+  facts: z.array(factSchema.omit({ source: true }).extend({ id: uuidSchema, raw_text: z.string().nullable(), source_type: z.string() }).passthrough()),
+  plans: z.array(planResponseSchema.omit({ change_summary: true }).extend({ facts_hash: z.string(), change_summary: z.unknown().nullable() }).passthrough()),
+  drafts: z.array(draftSchema.extend({ save_token: z.number().int().positive(), purpose: draftRequestSchema.shape.purpose, language: supportedLanguageSchema, is_current: z.boolean(), status: z.enum(["draft_prepared", "user_reports_sent"]) }).passthrough()),
+  updates: z.array(z.object({ id: uuidSchema, outcome: z.string(), note: z.string().nullable(), plan_revision_after: z.number().nullable() }).passthrough()),
+  checklist: z.array(z.object({ item_key: z.string(), status: z.enum(["have", "dont_have", "unsure"]) }).passthrough()),
+  facts_hash: z.string(),
+}).passthrough();
+export const checklistSaveSchema = z.object({ item_key: z.string().min(1).max(80), status: z.enum(["have", "dont_have", "unsure"]) }).strict();
+export type CaseSummary = z.infer<typeof caseSummarySchema>;
+export type CaseSnapshot = z.infer<typeof caseSnapshotSchema>;

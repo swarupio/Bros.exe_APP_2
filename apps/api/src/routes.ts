@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { caseCreateSchema, factReviewSchema, factCreateSchema, intakeRequestSchema, planRequestSchema, draftRequestSchema, updateRequestSchema, draftSaveSchema, draftCheckSchema, uuidSchema, validFactValue,retrievalRequestSchema } from '@kayda-sathi/shared';
+import { caseCreateSchema, factReviewSchema, factCreateSchema, intakeRequestSchema, planRequestSchema, draftRequestSchema, updateRequestSchema, draftSaveSchema, draftCheckSchema, uuidSchema, validFactValue, checklistSaveSchema, retrievalRequestSchema } from '@kayda-sathi/shared';
 import { Store, hashFacts, type CaseRow } from './store.js';
 import { Workflows } from './workflows.js';
 import type { Database } from './database.js';
@@ -28,7 +28,16 @@ export function registerRoutes(app: FastifyInstance, options: { db?: Database; a
       const drafts=await tx.query('select * from public.drafts where case_id=$1::uuid order by version',[caseId]);
       const updates=await tx.query('select * from public.case_updates where case_id=$1::uuid order by created_at,id',[caseId]);
       const fact_history=await tx.query('select * from public.facts where case_id=$1::uuid and retired_at is not null order by created_at,id',[caseId]);
-      return {...snapshot,fact_history,plans,drafts,updates,facts_hash:hashFacts(snapshot.facts)};
+      const checklist=await tx.query('select item_key,status from public.checklist_state where case_id=$1::uuid',[caseId]);
+      return {...snapshot,fact_history,plans,drafts,updates,checklist,facts_hash:hashFacts(snapshot.facts)};
+    });
+  });
+  app.post('/api/v1/cases/:id/checklist',auth,async req => {
+    const caseId=id(req.params),input=checklistSaveSchema.parse(req.body);
+    return db().withSnapshot(req.userId!,caseId,async tx => {
+      const [row]=await tx.query(`insert into public.checklist_state(case_id,item_key,status) values($1::uuid,$2,$3)
+        on conflict(case_id,item_key) do update set status=excluded.status,updated_at=now() returning item_key,status`,[caseId,input.item_key,input.status]);
+      return row;
     });
   });
   app.post('/api/v1/cases/:id/facts',auth,async req => {
