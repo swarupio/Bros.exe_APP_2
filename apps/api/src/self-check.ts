@@ -20,6 +20,7 @@ assert.equal(intakeRequestSchema.safeParse({ case_id: caseId, request_id: reques
 assert.equal(planRequestSchema.safeParse({ case_id: caseId, request_id: requestId, trigger: "initial", explain_lang: "hi" }).success, true);
 assert.equal(planRequestSchema.safeParse({ case_id: caseId, request_id: requestId, trigger: "initial", explain_lang: "hinglish" }).success, false);
 assert.equal(draftRequestSchema.safeParse({ case_id: caseId, request_id: requestId, purpose: "request", language: "en", tone: "firm" }).success, true);
+assert.equal(draftRequestSchema.safeParse({ case_id: caseId, request_id: requestId, purpose: "legal_notice", language: "en", tone: "polite" }).success, false);
 assert.equal(draftRequestSchema.safeParse({ case_id: caseId, request_id: requestId, purpose: "request", language: "hinglish", tone: "neutral" }).success, false);
 assert.equal(draftRequestSchema.safeParse({ case_id: caseId, request_id: requestId, purpose: "request", language: "en", tone: "neutral" }).success, false);
 for (const user_role of ["affected_person", "other_side", "helper", "unknown"]) {

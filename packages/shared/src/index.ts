@@ -45,7 +45,7 @@ export const planResponseSchema = z.object({
 
 export const draftSchema = z.object({ id: uuidSchema, version: z.number().int().positive(), body: z.string(), facts_hash: z.string() }).strict();
 export const draftRequestSchema = z.object({
-  case_id: uuidSchema, request_id: uuidSchema, purpose: z.string().min(1), language: supportedLanguageSchema, tone: z.enum(["polite", "firm"]),
+  case_id: uuidSchema, request_id: uuidSchema, purpose: z.enum(["request", "grievance", "follow_up", "consultation_summary"]), language: supportedLanguageSchema, tone: z.enum(["polite", "firm"]),
 }).strict();
 export const draftResponseSchema = z.object({ draft: draftSchema, placeholders: z.array(z.string()) }).strict();
 

@@ -80,7 +80,7 @@ AI/ML is Anthropic-backed structured inference only: issue classification, extra
 
 ### Apple-inspired visual direction
 
-Gururaj builds a polished, calm case-assistance UI inspired by Apple’s hierarchy and restrained use of motion, adapted to Android and mobile web. It is not a SwiftUI/iOS application. Put final token values and visual decisions here as implementation proceeds; avoid speculative image assets and motion dependencies.
+Gururaj builds a polished, calm case-assistance UI inspired by Apple’s hierarchy and restrained use of motion, adapted to Android and mobile web. It is not a SwiftUI/iOS application. [`DESIGN.md`](DESIGN.md) is the UI source of truth; individual screen references are saved in `docs/design/screens/`. Avoid speculative motion dependencies.
 
 | Design area | Decision |
 |---|---|
@@ -129,4 +129,4 @@ Required product/safety checks: no plan/draft without confirmed facts; conflicti
 
 ## Current Check-In
 
-The Git remote's starting `main` had only the original workboard. This foundation adds workspace manifests, a statically exported Next.js local demo, an initial Fastify health/API contract slice, knowledge packs, and data checks. The frontend typecheck/static build and knowledge/emergency self-checks pass. Registry access failed in this environment, so the API self-check, API typecheck, and full pnpm workspace build have not run. Auth-backed persistence, live AI, and P0 integration remain incomplete; passing the shell build is not the P0 gate. Keep the local PRD and contributor guide with the implementation push so teammates have its source requirements and build commands.
+The Git remote's starting `main` had only the original workboard. This foundation adds workspace manifests, a statically exported Next.js local demo, an initial Fastify health/API contract slice, knowledge packs, data checks, [`DESIGN.md`](DESIGN.md), and ten separate portrait screen references. Frontend typecheck/static build and knowledge/emergency self-checks pass. Registry access failed in this environment, so the API self-check, API typecheck, and full pnpm workspace build have not run. Auth-backed persistence, live AI, and P0 integration remain incomplete; passing the shell build is not the P0 gate. Keep the local PRD and contributor guide with the implementation push so teammates have its source requirements and build commands.
