@@ -36,7 +36,7 @@ export type DemoCase = {
   situationFactId?: string;
   draftId?: string;
   draftToken?: number;
-  plan?: { title: string; body: string; items: string[] };
+  plan?: { title: string; body: string; items: string[]; itemKeys?: string[] };
   planNeedsUpdate?: boolean;
   title: string;
   story: string;
@@ -68,10 +68,12 @@ function isDemoCase(value: unknown): value is DemoCase {
 export function useDemoCase() {
   const [record, setRecord] = useState<DemoCase | null>(null);
   const [ready, setReady] = useState(false);
+  const [owner,setOwner]=useState<string|null>(() => currentUser()?.id ?? null);
 
   useEffect(() => {
     const reload = () => {
       setReady(false);
+      setOwner(currentUser()?.id ?? null);
       const key = demoStorageKeys().case;
       try {
         const stored = window.localStorage.getItem(key);
@@ -81,7 +83,7 @@ export function useDemoCase() {
           else { window.localStorage.removeItem(key); setRecord(null); }
         } else setRecord(null);
       } catch {
-        window.localStorage.removeItem(key);
+        try { window.localStorage.removeItem(key); } catch { /* Storage may be blocked. */ }
         setRecord(null);
       }
       setReady(true);
@@ -98,11 +100,12 @@ export function useDemoCase() {
   }, []);
 
   const save = (next: DemoCase) => {
+    if ((currentUser()?.id ?? null)!==owner) throw new Error('The account changed. Reload before saving this case.');
     window.localStorage.setItem(demoStorageKeys().case, JSON.stringify(next));
     setRecord(next);
   };
 
-  return { record, ready, save };
+  return { record, ready, save,owner };
 }
 
 export function titleFromStory(story: string) {

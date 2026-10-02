@@ -8,7 +8,10 @@ export type FollowUp = {
   options?: string[];
 };
 
-const includes = (text: string, words: string[]) => words.some(word => text.includes(word));
+const includes = (text: string, words: string[]) => words.some(word => {
+  const escaped=word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return new RegExp(`(?:^|[^\\p{L}\\p{M}\\p{N}_])${escaped}(?=$|[^\\p{L}\\p{M}\\p{N}_])`,'u').test(text);
+});
 
 export function classifyIssue(story: string): IssueType {
   const text = story.toLowerCase();
@@ -18,6 +21,7 @@ export function classifyIssue(story: string): IssueType {
   if (includes(text, ["doctor", "hospital", "medicine", "symptom", "diagnosis", "health", "medical", "injury", "डॉक्टर", "अस्पताल", "दवा", "लक्षण", "स्वास्थ्य", "चिकित्सा", "इलाज", "चोट", "रुग्णालय", "औषध", "आरोग्य", "उपचार", "जखम"])) return "health";
   if (includes(text, ["divorce", "custody", "marriage", "family dispute", "maintenance", "inheritance", "तलाक", "हिरासत", "शादी", "पारिवारिक विवाद", "भरण-पोषण", "विरासत", "घटस्फोट", "मुलांचा ताबा", "कौटुंबिक", "पोटगी", "वारसा"])) return "family";
   if (includes(text, ["salary", "wage", "payroll", "employer", "unpaid pay", "not paid my salary", "वेतन", "मजदूरी", "तनख्वाह", "पगार", "मजुरी", "नियोक्ता", "मालिक ने वेतन", "salary nahi mila", "pagar milala nahi"])) return "wages";
+  if (includes(text,["landlord","tenant","rental","moved out","मकान मालिक","किरायेदार","घरमालक","भाडेकरू"])) return 'rental';
   if (includes(text, ["refund", "seller", "defective", "product", "order", "service provider", "consumer", "रिफंड", "विक्रेता", "खराब उत्पाद", "उपभोक्ता", "परतावा", "दोषपूर्ण", "उत्पादन", "ग्राहक"])) return "consumer";
   if (includes(text, ["loan", "debt", "bank", "insurance", "credit card", "bill", "investment", "pension", "benefit", "ऋण", "कर्ज", "बैंक", "बीमा", "क्रेडिट कार्ड", "बिल", "निवेश", "पेंशन", "लाभ", "बँक", "विमा", "गुंतवणूक"])) return "financial";
   if (includes(text, ["landlord", "deposit", "rent", "tenant", "rental", "moved out", "मकान मालिक", "जमा राशि", "किराया", "किरायेदार", "भाड़ा", "घर खाली", "डिपॉज़िट", "घरमालक", "ठेव", "भाडे", "भाडेकरू", "घर सोडले", "makan malik", "kiraya", "bhada"])) return "rental";

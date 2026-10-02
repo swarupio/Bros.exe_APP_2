@@ -100,11 +100,10 @@ export function ReviewScreen() {
         next = { ...next, rev: result.rev };
       }
       save(next);
+      router.push("/case/");
     } catch (reason) {
-      save(next);
       setError(reason instanceof Error ? reason.message : "Could not confirm online; your review is saved on this device.");
     } finally { setConfirming(false); }
-    router.push("/case/");
   };
 
   return <main className="page-content flow-page">

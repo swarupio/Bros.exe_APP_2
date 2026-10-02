@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BackLink, LocalNotice, PageHeading, PrimaryLink } from "@/components/ui";
 import { useDemoCase } from "@/components/demo-store";
 import { useLanguage } from "@/components/language";
-import { apiRequest } from "@/lib/supabase";
+import { apiRequest,apiWorkflowRequest } from "@/lib/supabase";
 
 function makeDraft(story: string, language: "en" | "hi" | "mr") {
   if (language === "hi") return `नमस्ते,\n\nमैं नीचे दी गई समस्या के बारे में लिख रहा/रही हूँ:\n\n${story}\n\nमैं इस बारे में आपसे बात करना चाहता/चाहती हूँ। कृपया जवाब देने के लिए सुविधाजनक समय बताएँ।\n\nधन्यवाद,\n[आपका नाम]`;
@@ -14,27 +14,35 @@ function makeDraft(story: string, language: "en" | "hi" | "mr") {
 
 export function DraftScreen() {
   const { language, t } = useLanguage();
-  const { record, ready, save } = useDemoCase();
+  const { record, ready, save,owner } = useDemoCase();
   const [draft, setDraft] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generating,setGenerating]=useState(false);
+  const edited=useRef(false);
+  const identity=useRef<string|null>(null);
 
   useEffect(() => {
-    if (!ready || !record) return;
-    setDraft(record.draft || makeDraft(record.story, language));
-  }, [ready, record]);
+    if (!ready) return;
+    if (!record) {edited.current=false;identity.current=null;setDraft('');return;}
+    const key=JSON.stringify([owner,record.caseId ?? record.story]);
+    if (identity.current!==key) {identity.current=key;edited.current=false;}
+    if (!edited.current) setDraft(record.draft || (record.caseId ? '' : makeDraft(record.story, language)));
+  }, [ready,owner,record?.story,record?.caseId, record?.draftId]);
 
   useEffect(() => {
     if (!record?.caseId || record.draftId) return;
     let active = true;
-    apiRequest<{ draft: { id: string; body: string }; save_token?: number }>("/ai/draft", {
-      case_id: record.caseId, request_id: crypto.randomUUID(), purpose: "request", language, tone: "polite",
-    }).then(result => {
+    setGenerating(true);
+    apiWorkflowRequest<{ draft: { id: string; body: string }; save_token?: number }>("/ai/draft", {
+      case_id: record.caseId, purpose: "request", language, tone: "polite",
+    },record.rev).then(result => {
       if (active) {
+        if (edited.current) return;
         setDraft(result.draft.body);
         save({ ...record, draft: result.draft.body, draftId: result.draft.id, draftToken: result.save_token });
       }
-    }).catch(reason => { if (active) setMessage(reason instanceof Error ? reason.message : "Could not prepare the online draft."); });
+    }).catch(reason => { if (active) setMessage(reason instanceof Error ? reason.message : "Could not prepare the online draft."); }).finally(() => {if (active) setGenerating(false);});
     return () => { active = false; };
   }, [language, record?.caseId, record?.draftId]);
 
@@ -51,7 +59,6 @@ export function DraftScreen() {
       } else save({ ...record, draft });
       setMessage(t("savedDraft"));
     } catch (reason) {
-      save({ ...record, draft });
       setMessage(reason instanceof Error ? reason.message : "Draft saved on this device only.");
     } finally { setSaving(false); }
   };
@@ -71,11 +78,11 @@ export function DraftScreen() {
     {!ready ? <p className="loading-copy">{t("loadingCase")}</p> : record ? <>
       <p className="draft-context"><span className="context-icon"><span>i</span></span><span>{t("draftPrivacy")}</span></p>
       <label className="visually-hidden" htmlFor="draft-text">{t("editableDraft")}</label>
-      <textarea id="draft-text" className="draft-editor" value={draft} onChange={event => { setDraft(event.target.value); setMessage(""); }} spellCheck/>
+      <textarea id="draft-text" className="draft-editor" value={draft} maxLength={20000} disabled={generating || Boolean(record.caseId && !record.draftId)} onChange={event => { edited.current=true;setDraft(event.target.value); setMessage(""); }} spellCheck/>
       <LocalNotice>{t("draftNotice")}</LocalNotice>
       <div className="button-row">
         <button className="button button-secondary" type="button" onClick={copyDraft}>{t("copy")}</button>
-        <button className="button button-primary" type="button" onClick={saveDraft} disabled={saving}>{saving ? "Saving…" : t("saveDraft")}</button>
+        <button className="button button-primary" type="button" onClick={saveDraft} disabled={saving || generating || Boolean(record.caseId && !record.draftId)}>{saving ? "Saving…" : t("saveDraft")}</button>
       </div>
       {message && <p className="form-message" role="status">{message}</p>}
     </> : null}

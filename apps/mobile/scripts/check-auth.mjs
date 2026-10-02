@@ -87,4 +87,22 @@ await auth.signInWithPassword("a@example.test", "password");
 globalThis.fetch = async () => { throw new Error("offline"); };
 await assert.rejects(auth.signOut(), /offline/);
 assert.equal(auth.currentUser(), null, "offline sign-out still removes local access");
-console.log("Auth request, PKCE, refresh, and sign-out checks passed.");
+// A refresh belonging to A must not sign B out when A's token is rejected.
+globalThis.fetch = async () => new Response(JSON.stringify(response), { status: 200 });
+await auth.signInWithPassword('a@example.test','password');expire();
+let rejectOldRefresh;
+const second={...response,access_token:'b-access',refresh_token:'b-refresh',user:{id:'22222222-2222-4222-8222-222222222222'}};
+globalThis.fetch=async url => url.includes('grant_type=refresh_token') ? new Promise(resolve => {rejectOldRefresh=resolve;}) : new Response(JSON.stringify(second),{status:200});
+const oldRefresh=auth.getAccessToken();
+await auth.signInWithPassword('b@example.test','password');
+rejectOldRefresh(new Response(JSON.stringify({message:'Invalid refresh'}),{status:401}));
+await assert.rejects(oldRefresh,/Invalid refresh/);
+assert.equal(auth.currentUser().id,second.user.id);
+// Local logout finishes immediately; a subsequent account survives server latency.
+let finishLogout;
+globalThis.fetch=async url => url.includes('logout') ? new Promise(resolve => {finishLogout=resolve;}) : new Response(JSON.stringify(response),{status:200});
+const logout=auth.signOut();assert.equal(auth.currentUser(),null);
+await auth.signInWithPassword('a@example.test','password');
+finishLogout(new Response(null,{status:204}));await logout;
+assert.equal(auth.currentUser().id,response.user.id);
+console.log("Auth request, PKCE, refresh, sign-out and account-switch race checks passed.");

@@ -1,0 +1,22 @@
+# BUG-1 codebase audit
+
+Audited application/shared/knowledge sources, SQL/Prisma boundaries, scripts, environment examples, Docker and Android configuration. Existing static and regression checks passed initially; inspection found integration faults beyond that coverage.
+
+Fixed:
+
+- A rejected old refresh or delayed logout could remove a newly signed-in account. Local logout now happens immediately, and old refresh failures cannot clear another session. Case caches clear on auth changes, old API responses are rejected, and case saves remain bound to their loaded account.
+- Manual narrative facts accepted at most 1,000 characters while accounts permit 3,000. Text facts now support the account limit; party/enum/place bounds and model proposal limits remain narrower.
+- Hindi/Marathi histories could exceed Fast Track's 14 KB request cap. The transport cap now accommodates the schema's Unicode bound; assistant history is bounded before resubmission. Failed chat requests preserve the message for retry and use the same API URL configuration as normal mode.
+- Frontend substring matching classified “first” as FIR and rental refunds as consumer questions. Matches use Unicode token boundaries and specific rental signals take priority.
+- Microphone recording had no time cap or navigation cleanup. It now stops after 30 seconds, releases tracks on unmount/errors, avoids parallel permission requests and bounds transcription wait time. Voice text is clamped to each form's limit.
+- Confirmation/update/intake errors disappeared behind automatic navigation. Navigation now requires success. Partial case IDs are retained after interrupted intake; form text remains available. Retry reuses a retained case ID and reloads its revision/fact IDs. A lost response before the ID is received still needs server create idempotency, which is not implemented.
+- React remounts could issue concurrent plan/draft generations and race revision guards. Pending workflows share a request scoped to account, inputs and revision. Draft generation blocks premature edits/saves; background refresh cannot overwrite edited text. Draft edits are bounded to the API's 20,000-character limit.
+- Checklist persistence used display labels and restored results by array position. Generated plans use canonical keys; reopen maps each document to its key. Preexisting label-based checklist records may need to be checked again.
+- The fallback auth verifier returned 401 for network/provider outages and accepted malformed UUID shapes. Outages are now retryable 503; IDs use the shared UUID validator.
+- Dependency installation could leave Prisma Client ungenerated. An API postinstall hook generates it, and Docker copies schema/config before installation.
+
+The production dependency audit initially reported seven advisories across PostCSS, deepmerge-ts and mysql2. Workspace overrides resolve patched versions 8.5.28, 8.0.2 and 3.24.5. Prisma generation/schema validation, API tests and Next production export verify exercised compatibility. References: [PostCSS advisory](https://github.com/advisories/GHSA-6g55-p6wh-862q), [deepmerge-ts advisory](https://github.com/advisories/GHSA-ggr8-5vv4-36mx), [mysql2 advisory](https://github.com/advisories/GHSA-3f6p-5ww8-9rcr). Revisit overrides when upstream dependencies update; a registry audit is not proof of universal security.
+
+Verification: workspace typechecks/tests/build; auth race, client deduplication/account-response isolation, topic negatives, Unicode transport and fact-bound regressions; existing SQL/RLS/ownership/inference/deletion/retrieval tests; knowledge validation and safety checks; Prisma schema/generation; local HTTP startup; production dependency audit. Mobile auth/intake tests now run in `pnpm test`.
+
+Limits: no browser surface was available for visual smoke testing. Hosted Supabase/Anthropic/Groq, Android microphone/location/OAuth behavior, and Docker image execution were not validated here. Free-form Fast Track replies still depend on prompt-based safeguards and are not sourced RAG answers. Normal-mode clarification answers are stored locally rather than confirmed into the server fact ledger; proposed update facts still need full frontend review integration. These are documented integration gaps, not passing live P0 gates. Required teammate review remains pending. No hosted schema, legal source status or credentials changed, and audit edits are local until explicitly pushed.

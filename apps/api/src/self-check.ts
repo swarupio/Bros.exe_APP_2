@@ -59,6 +59,9 @@ const verifySupabaseToken = createSupabaseTokenVerifier("https://project.example
 assert.equal(await verifySupabaseToken("user-jwt"), caseId);
 assert.equal(forwardedToken, "Bearer user-jwt");
 assert.equal(await createSupabaseTokenVerifier("https://project.example", "key", async () => new Response("{}", { status: 401 }))("bad"), null);
+await assert.rejects(createSupabaseTokenVerifier('https://project.example','key',async () => new Response('{}',{status:503}))('token'),/AUTH_UNAVAILABLE/);
+await assert.rejects(createSupabaseTokenVerifier('https://project.example','key',async () => {throw new Error('offline');})('token'),/AUTH_UNAVAILABLE/);
+assert.equal(await createSupabaseTokenVerifier('https://project.example','key',async () => new Response(JSON.stringify({id:'-'.repeat(36)})))('token'),null);
 
 const previousOrigins = process.env.APP_ORIGINS;
 process.env.APP_ORIGINS = "http://localhost:3000,https://localhost";
@@ -94,6 +97,8 @@ try {
   const chat = await groqApp.inject({ method: "POST", url: "/api/v1/fast", payload: { language: "mr", messages: [{ role: "user", content: "मला मदत हवी आहे" }] } });
   assert.equal(chat.statusCode, 200);
   assert.equal(chat.json().reply, "Keep the records together and contact the bank.");
+  const unicodeHistory=await groqApp.inject({method:'POST',url:'/api/v1/fast',payload:{language:'mr',messages:Array.from({length:10},(_,i) => ({role:i===9 ? 'user' : 'assistant',content:'म'.repeat(1200)}))}});
+  assert.equal(unicodeHistory.statusCode,200);
   const transcript = await groqApp.inject({ method: "POST", url: "/api/v1/fast/transcribe", payload: { language: "mr", mime_type: "audio/webm", audio_base64: "YXVkaW8=" } });
   assert.equal(transcript.statusCode, 200);
   assert.match(transcript.json().text, /बँकेत/);

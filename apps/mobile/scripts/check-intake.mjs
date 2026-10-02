@@ -31,3 +31,6 @@ for (const issue of ["health", "financial", "criminal", "family"]) {
 }
 
 console.log("Personalized intake question checks passed.");
+assert.equal(classifyIssue('This is the first problem my parent and I have discussed.'),'general');
+assert.equal(classifyIssue('My landlord refuses to refund my rental deposit.'),'rental');
+assert.equal(classifyIssue('My apartment landlord has not returned the security deposit.'),'rental');

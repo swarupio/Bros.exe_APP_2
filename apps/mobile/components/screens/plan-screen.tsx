@@ -5,7 +5,7 @@ import { useDemoCase } from "@/components/demo-store";
 import { BackLink, Icon, LocalNotice, PageHeading, PrimaryLink } from "@/components/ui";
 import { classifyIssue } from "@/components/intake-questions";
 import { useLanguage } from "@/components/language";
-import { apiRequest } from "@/lib/supabase";
+import { apiRequest,apiWorkflowRequest } from "@/lib/supabase";
 
 const preparationByIssue = {
   rental: { title: "Keep a clear record of the deposit.", body: "Save your rental agreement, proof of payment, move-out notes or photos, and messages about the refund.", items: ["Rental agreement or rent receipts", "Proof of deposit and amount returned", "Move-out notes and refund messages"] },
@@ -59,10 +59,10 @@ export function PlanScreen() {
   useEffect(() => {
     if (!record?.caseId || record.plan) return;
     let active = true;
-    apiRequest<{ content: { next_step: { title: string; why: string }; documents: Array<{ label: string }> } }>("/ai/plan", {
-      case_id: record.caseId, request_id: crypto.randomUUID(), trigger: record.planNeedsUpdate ? "update" : "initial", explain_lang: language,
-    }).then(result => {
-      if (active) save({ ...record, plan: { title: result.content.next_step.title, body: result.content.next_step.why, items: result.content.documents.slice(0, 3).map(item => item.label) }, planNeedsUpdate: false });
+    apiWorkflowRequest<{ content: { next_step: { title: string; why: string }; documents: Array<{ key:string;label: string }> } }>("/ai/plan", {
+      case_id: record.caseId, trigger: record.planNeedsUpdate ? "update" : "initial", explain_lang: language,
+    },record.rev).then(result => {
+      if (active) save({ ...record, plan: { title: result.content.next_step.title, body: result.content.next_step.why, items: result.content.documents.slice(0, 3).map(item => item.label), itemKeys: result.content.documents.slice(0,3).map(item => item.key) }, planNeedsUpdate: false });
     }).catch(reason => { if (active) setMessage(reason instanceof Error ? reason.message : "Could not load the online plan."); });
     return () => { active = false; };
   }, [language, record?.caseId, record?.plan, record?.planNeedsUpdate]);
@@ -91,7 +91,7 @@ export function PlanScreen() {
             const checked = [...record.checked];
             checked[index] = event.target.checked;
             save({ ...record, checked });
-            if (record.caseId) apiRequest(`/cases/${record.caseId}/checklist`, { item_key: item, status: event.target.checked ? "have" : "unsure" }).catch(() => {});
+            if (record.caseId) apiRequest(`/cases/${record.caseId}/checklist`, { item_key: record.plan?.itemKeys?.[index] ?? `preparation_${index}`, status: event.target.checked ? "have" : "unsure" }).catch(reason => setMessage(reason instanceof Error ? reason.message : 'Checklist saved on this device; online saving failed.'));
           }}/>
           <span className="checkmark"><Icon name="check" size={14}/></span>
           <span>{item}</span>

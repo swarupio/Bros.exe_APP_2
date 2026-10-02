@@ -10,7 +10,7 @@ import { currentUser } from "@/components/supabase-auth";
 import { apiRequest } from "@/lib/supabase";
 
 type RemoteCase = { id: string; title: string; status: string; rev: number };
-type RemoteSnapshot = { case: { id: string; title: string; original_account: string; rev: number }; facts: Array<{ id: string; key: string; value: unknown; status: string }>; drafts: Array<{ id: string; body: string; save_token: number; is_current: boolean }>; plans: Array<{ content: { next_step: { title: string; why: string }; documents: Array<{ label: string }> } }>; checklist: Array<{ status: "have" | "dont_have" | "unsure" }> };
+type RemoteSnapshot = { case: { id: string; title: string; original_account: string; rev: number }; facts: Array<{ id: string; key: string; value: unknown; status: string }>; drafts: Array<{ id: string; body: string; save_token: number; is_current: boolean }>; plans: Array<{ content: { next_step: { title: string; why: string }; documents: Array<{ key:string;label: string }> } }>; checklist: Array<{ item_key:string;status: "have" | "dont_have" | "unsure" }> };
 
 const labels: Record<AppLanguage, Record<string, string>> = {
   en: { description: "Track your cases, get updates and take the next step.", loading: "Loading your cases…", space: "Your space", updated: "Updated just now", progress: "In progress", illustration: "A blank page ready for your first case", emptyTitle: "Your cases will appear here", unfinished: "You have an unfinished description saved on this device.", start: "Start with a few details. You can take it one step at a time.", notice: "Your case is saved only in this browser in the current preview." },
@@ -29,8 +29,17 @@ export function CasesScreen() {
 
   useEffect(() => setHasIntakeDraft(Boolean(readIntakeDraft())), []);
   useEffect(() => {
-    if (!currentUser()) return;
-    apiRequest<RemoteCase[]>("/cases", undefined, "GET").then(setRemoteCases).catch(reason => setRemoteError(reason instanceof Error ? reason.message : "Could not load saved cases."));
+    let generation=0;
+    const reload=() => {
+      const request=++generation;
+      setRemoteCases([]);setRemoteError('');
+      if (!currentUser()) return;
+      apiRequest<RemoteCase[]>("/cases", undefined, "GET").then(value => {if (request===generation) setRemoteCases(value);}).catch(reason => {if (request===generation) setRemoteError(reason instanceof Error ? reason.message : "Could not load saved cases.");});
+    };
+    reload();
+    window.addEventListener('kayda-auth-changed',reload);
+    window.addEventListener('storage',reload);
+    return () => {generation++;window.removeEventListener('kayda-auth-changed',reload);window.removeEventListener('storage',reload);};
   }, []);
 
   const openRemote = async (id: string) => {
@@ -40,7 +49,7 @@ export function CasesScreen() {
       const situation = snapshot.facts.find(fact => fact.key === "situation" && fact.status === "confirmed");
       const draft = snapshot.drafts.find(item => item.is_current);
       const plan = snapshot.plans.at(-1)?.content;
-      save({ ...next, title: snapshot.case.title, caseId: snapshot.case.id, rev: snapshot.case.rev, situationFactId: situation?.id, draft: draft?.body ?? "", draftId: draft?.id, draftToken: draft?.save_token, checked: snapshot.checklist.slice(0, 3).map(item => item.status === "have").concat([false, false, false]).slice(0, 3), plan: plan ? { title: plan.next_step.title, body: plan.next_step.why, items: plan.documents.slice(0, 3).map(item => item.label) } : undefined });
+      save({ ...next, title: snapshot.case.title, caseId: snapshot.case.id, rev: snapshot.case.rev, situationFactId: situation?.id, draft: draft?.body ?? "", draftId: draft?.id, draftToken: draft?.save_token, checked: (plan?.documents.slice(0,3).map(item => snapshot.checklist.some(state => state.item_key===item.key && state.status==="have")) ?? []).concat([false,false,false]).slice(0,3), plan: plan ? { title: plan.next_step.title, body: plan.next_step.why, items: plan.documents.slice(0, 3).map(item => item.label), itemKeys: plan.documents.slice(0,3).map(item => item.key) } : undefined });
       router.push("/case/");
     } catch (reason) { setRemoteError(reason instanceof Error ? reason.message : "Could not open this case."); }
   };

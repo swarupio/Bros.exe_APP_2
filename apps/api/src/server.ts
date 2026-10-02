@@ -36,7 +36,7 @@ export function createApp(options: { verifyToken?: AuthVerifier; mockAI?: boolea
   })));
   app.get('/api/v1/resources',async () => publicResources());
   registerRoutes(app,options);
-  app.post("/api/v1/fast", { bodyLimit: 14_000, config: { rateLimit: { max: 12, timeWindow: "1 minute" } } }, async (request, reply) => {
+  app.post("/api/v1/fast", { bodyLimit: 52_000, config: { rateLimit: { max: 12, timeWindow: "1 minute" } } }, async (request, reply) => {
     const input = fastChatRequestSchema.safeParse(request.body);
     if (!input.success) return reply.code(400).send({ error: { code: "INVALID_REQUEST", message: "Check your message and try again.", retryable: false } });
     if (!groqKey) return reply.code(503).send({ error: { code: "AI_NOT_CONFIGURED", message: "Fast Track is not connected yet.", retryable: false } });

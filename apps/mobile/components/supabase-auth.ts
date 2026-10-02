@@ -122,7 +122,7 @@ export async function getAccessToken(): Promise<string | null> {
     refreshRequest = authRequest<AuthResponse>("token?grant_type=refresh_token", { refresh_token: session.refresh_token })
       .then(value => readSession()?.refresh_token === session.refresh_token ? storeSession(value).access_token : readSession()?.access_token ?? null)
       .catch(error => {
-        if (error instanceof AuthRequestError && (error.status === 400 || error.status === 401)) {
+        if (error instanceof AuthRequestError && (error.status === 400 || error.status === 401) && readSession()?.refresh_token===session.refresh_token) {
           window.localStorage.removeItem(sessionKey);
           window.dispatchEvent(new Event("kayda-auth-changed"));
           return null;
@@ -138,8 +138,10 @@ export async function getAccessToken(): Promise<string | null> {
 export async function signOut() {
   const token = readSession()?.access_token;
   // Local sign-out remains available offline; server revocation needs connectivity.
-  try { if (token) await authRequest("logout?scope=local", {}, token); }
-  finally { window.localStorage.removeItem(sessionKey); window.localStorage.removeItem(verifierKey); window.dispatchEvent(new Event("kayda-auth-changed")); }
+  window.localStorage.removeItem(sessionKey);
+  window.localStorage.removeItem(verifierKey);
+  window.dispatchEvent(new Event("kayda-auth-changed"));
+  if (token) await authRequest("logout?scope=local", {}, token);
 }
 
 export function currentUser() { return readSession()?.user ?? null; }

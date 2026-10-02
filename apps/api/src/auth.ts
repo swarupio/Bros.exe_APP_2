@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { uuidSchema } from '@kayda-sathi/shared';
 
 export type AuthVerifier = (token: string) => Promise<string | null>;
 
@@ -10,11 +11,12 @@ export function createSupabaseTokenVerifier(url: string, publishableKey: string,
         headers: { apikey: publishableKey, Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(5_000),
       });
+      if (response.status>=500 || response.status===429) throw new Error('AUTH_UNAVAILABLE');
       if (!response.ok) return null;
       const user = await response.json() as { id?: unknown };
-      return typeof user.id === "string" && /^[0-9a-f-]{36}$/i.test(user.id) ? user.id : null;
+      return uuidSchema.safeParse(user.id).success ? user.id as string : null;
     } catch {
-      return null;
+      throw new Error('AUTH_UNAVAILABLE');
     }
   };
 }

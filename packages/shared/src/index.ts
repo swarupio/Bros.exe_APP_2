@@ -115,7 +115,7 @@ export function validFactValue(fact: Pick<Fact,'kind'|'value'|'status'>): boolea
     case 'amount': return amountSchema.safeParse(fact.value).success;
     case 'bool': return typeof fact.value==='boolean';
     case 'date': return z.object({date:z.iso.date()}).strict().safeParse(fact.value).success;
-    default: return typeof fact.value==='string' && fact.value.length>0 && fact.value.length<=1000;
+    default: return typeof fact.value==='string' && fact.value.length>0 && fact.value.length<=(fact.kind==='text' ? 3000 : 1000);
   }
 }
 

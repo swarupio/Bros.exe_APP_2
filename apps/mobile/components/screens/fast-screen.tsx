@@ -8,7 +8,7 @@ import { LocationButton } from "@/components/location-button";
 import { VoiceTypeButton } from "@/components/voice-type-button";
 
 type Message = { role: "user" | "assistant"; content: string };
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1";
+import { API_BASE } from "@/lib/supabase";
 
 export function FastScreen() {
   const { language, t } = useLanguage();
@@ -31,12 +31,15 @@ export function FastScreen() {
       const response = await fetch(`${API_BASE}/fast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language, messages: nextMessages.slice(-10) }),
+        body: JSON.stringify({ language, messages: nextMessages.slice(-10).map(message => ({...message,content:message.content.slice(0,1200)})) }),
+        signal: AbortSignal.timeout(30_000),
       });
       const data = await response.json() as { reply?: string };
       if (!response.ok || !data.reply) throw new Error(t("responseError"));
       setMessages(current => [...current, { role: "assistant", content: data.reply! }]);
     } catch (cause) {
+      setMessages(messages);
+      setStory(content);
       setError(cause instanceof Error ? cause.message : t("responseError"));
     } finally {
       setBusy(false);
@@ -54,9 +57,9 @@ export function FastScreen() {
     <form className="simple-form" onSubmit={submit}>
       <div className="intake-field">
         <label htmlFor="fast-story">{t("tell")}</label>
-        <textarea id="fast-story" value={story} onChange={event => setStory(event.target.value)} maxLength={1200} required placeholder={messages.length ? t("addDetail") : t("placeholder")}/>
+        <textarea id="fast-story" value={story} onChange={event => setStory(event.target.value)} maxLength={1200} disabled={busy} required placeholder={messages.length ? t("addDetail") : t("placeholder")}/>
         <div className="field-meta"><span>{t("comfort")}</span><span>{story.length}/1200</span></div>
-        <VoiceTypeButton onText={text => setStory(current => current ? `${current} ${text}` : text)} onBusyChange={setVoiceBusy} disabled={busy}/>
+        <VoiceTypeButton onText={text => setStory(current => (current ? `${current} ${text}` : text).slice(0,1200))} onBusyChange={setVoiceBusy} disabled={busy}/>
         <LocationButton/>
       </div>
       <button className="button button-primary button-wide" type="submit" disabled={!story.trim() || busy || voiceBusy}>{busy ? t("thinking") : messages.length ? t("send") : t("firstSteps")}<Icon name="arrow" size={18}/></button>

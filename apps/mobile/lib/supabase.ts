@@ -29,3 +29,13 @@ export async function apiRequest<T>(path: string, body?: unknown, method = "POST
   if (!response.ok) throw new ApiRequestError(result.error?.code ?? "REQUEST_FAILED", response.status, result.error?.message);
   return result as T;
 }
+// StrictMode and rapid remounts share a pending generation rather than racing writes.
+const pendingWorkflows=new Map<string,Promise<unknown>>();
+export function apiWorkflowRequest<T>(path:string,body:Record<string,unknown>,revision?:number):Promise<T> {
+  const key=JSON.stringify([currentUser()?.id,path,body,revision]);
+  const prior=pendingWorkflows.get(key);
+  if (prior) return prior as Promise<T>;
+  const request=apiRequest<T>(path,{...body,request_id:crypto.randomUUID()}).finally(() => {pendingWorkflows.delete(key);});
+  pendingWorkflows.set(key,request);
+  return request;
+}

@@ -20,6 +20,9 @@ assert.deepEqual(derivedAmounts([fact('amount_paid',{inr:50000},'proposed'),fact
 assert.equal(validFactValue({kind:'amount',value:{inr:-1},status:'confirmed'}),false);
 assert.equal(validFactValue({kind:'bool',value:'true',status:'confirmed'}),false);
 assert.equal(validFactValue({kind:'date',value:{date:'2026-02-30'},status:'confirmed'}),false);
+assert.equal(validFactValue({kind:'text',value:'a'.repeat(3000),status:'confirmed'}),true);
+assert.equal(validFactValue({kind:'text',value:'a'.repeat(3001),status:'confirmed'}),false);
+assert.equal(validFactValue({kind:'party',value:'a'.repeat(1001),status:'confirmed'}),false);
 assert.equal(hashFacts([fact('one',{a:1,b:2})]),hashFacts([fact('one',{b:2,a:1})]));
 assert.throws(() => confirmedFacts({case:{} as never,facts:[fact('a',{inr:1}),fact('a',{inr:2})]}),/FACT_CONFLICT/);
 

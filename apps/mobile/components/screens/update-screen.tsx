@@ -46,11 +46,10 @@ export function UpdateScreen() {
         next = { ...next, rev: result.case_rev ?? record.rev, plan: undefined, planNeedsUpdate: true };
       }
       save(next);
+      router.push("/case/");
     } catch (reason) {
-      save(next);
       setError(reason instanceof Error ? reason.message : "Update saved on this device only.");
     } finally { setSaving(false); }
-    router.push("/case/");
   };
 
   return <main className="page-content flow-page">
