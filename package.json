@@ -1,0 +1,17 @@
+{
+  "name": "kayda-sathi",
+  "private": true,
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22.11.0"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @kayda-sathi/mobile dev",
+    "dev:api": "pnpm --filter @kayda-sathi/api dev",
+    "build": "pnpm --recursive --workspace-concurrency=1 --if-present build",
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "test": "pnpm --recursive --if-present test",
+    "validate:knowledge": "node packages/knowledge/scripts/validate.mjs",
+    "check:safety": "node packages/knowledge/scripts/emergency-check.mjs"
+  }
+}

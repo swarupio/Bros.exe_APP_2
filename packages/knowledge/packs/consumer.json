@@ -1,0 +1,34 @@
+{
+  "pack_id": "consumer",
+  "pack_version": "0.1.0",
+  "title": { "en": "Product or service issue" },
+  "match_hints": ["consumer", "refund", "defective", "defect", "product", "service", "seller", "purchase", "warranty"],
+  "claims": [
+    {
+      "id": "CN-1",
+      "type": "practice",
+      "text_en": "Keep the order details, payment proof and messages with the seller together before asking for help.",
+      "source": { "name": "General preparation guidance; not a statement of law" },
+      "status": "seed",
+      "last_checked": "2026-10-02",
+      "verified_by": null,
+      "verified_on": null,
+      "deadline_rule": null
+    }
+  ],
+  "checklist": [
+    {
+      "key": "order_and_payment",
+      "label_en": "Order and payment proof",
+      "why_en": "Helps identify what was ordered and paid.",
+      "alternatives_en": ["Bank or UPI statement", "Order confirmation", "Invoice or receipt"]
+    },
+    {
+      "key": "seller_messages",
+      "label_en": "Messages with the seller",
+      "why_en": "Keeps a record of what was requested and the response.",
+      "alternatives_en": ["Email", "Support ticket number", "A dated written account"]
+    }
+  ],
+  "red_flags": []
+}

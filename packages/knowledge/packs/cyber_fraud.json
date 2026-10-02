@@ -1,0 +1,34 @@
+{
+  "pack_id": "cyber_fraud",
+  "pack_version": "0.1.0",
+  "title": { "en": "Online or financial fraud" },
+  "match_hints": ["cyber fraud", "online fraud", "upi fraud", "scam", "phishing", "unauthorised transaction", "unauthorized transaction"],
+  "claims": [
+    {
+      "id": "CF-1",
+      "type": "practice",
+      "text_en": "Keep the transaction reference, time, amount and available bank messages together so you can explain the event when you contact your bank or an official reporting service.",
+      "source": { "name": "General preparation guidance; not a statement of law" },
+      "status": "seed",
+      "last_checked": "2026-10-02",
+      "verified_by": null,
+      "verified_on": null,
+      "deadline_rule": null
+    }
+  ],
+  "checklist": [
+    {
+      "key": "transaction_details",
+      "label_en": "Transaction details",
+      "why_en": "Helps describe the payment clearly to the bank or reporting service.",
+      "alternatives_en": ["Bank statement", "Payment app history", "Transaction reference and timestamp"]
+    },
+    {
+      "key": "fraud_messages",
+      "label_en": "Related messages or call details",
+      "why_en": "May help document how the contact happened.",
+      "alternatives_en": ["Screenshots", "Caller number", "A dated written account"]
+    }
+  ],
+  "red_flags": []
+}

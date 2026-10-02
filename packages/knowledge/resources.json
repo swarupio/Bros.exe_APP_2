@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "resources": [
+    {
+      "id": "india_emergency_112",
+      "name": "Emergency Response Support System",
+      "type": "helpline",
+      "scope": "national",
+      "phone": "112",
+      "url": "https://112.gov.in/",
+      "status": "seed",
+      "last_checked": "2026-10-02"
+    },
+    {
+      "id": "nalsa_15100",
+      "name": "National Legal Services Authority helpline",
+      "type": "helpline",
+      "scope": "national",
+      "phone": "15100",
+      "url": "https://nalsa.gov.in/promoting-inclusive-legal-system/",
+      "status": "seed",
+      "last_checked": "2026-10-02"
+    },
+    {
+      "id": "cybercrime_reporting",
+      "name": "National Cyber Crime Reporting Portal",
+      "type": "portal",
+      "scope": "national",
+      "phone": null,
+      "url": "https://cybercrime.gov.in/",
+      "status": "seed",
+      "last_checked": "2026-10-02"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "locales": {
+    "en": {
+      "terms": ["threat", "threaten", "threatened", "threatening", "threats", "violence", "violent", "assault", "assaulted", "attacked", "attacking", "hit", "hurt", "harm", "weapon", "chasing", "abuse", "dhamki", "hamla", "maar peet", "mar peet", "maar raha", "mar raha"],
+      "negations": ["not", "never", "didn't", "didnt", "isn't", "isnt", "wasn't", "wasnt", "नहीं", "नही", "nahi", "nahin", "nahiin", "नाही"]
+    },
+    "hi": {
+      "terms": ["धमकी", "मार", "मारने", "हमला", "हिंसा", "हथियार", "पीछा", "जबरदस्ती", "ज़बरदस्ती"],
+      "negations": ["नहीं", "नही", "नहीं था", "नही था", "nahi", "nahin", "mat"]
+    },
+    "mr": {
+      "terms": ["धमकी", "हल्ला", "मार", "हिंसा", "शस्त्र", "पाठलाग", "जबरदस्ती"],
+      "negations": ["नाही", "नव्हता", "नव्हती", "nahi", "nahī"]
+    }
+  }
+}

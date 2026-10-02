@@ -1,0 +1,34 @@
+{
+  "pack_id": "rent_deposit",
+  "pack_version": "0.1.0",
+  "title": { "en": "Rental deposit" },
+  "match_hints": ["landlord", "tenant", "rent", "rental deposit", "security deposit", "flat", "move out"],
+  "claims": [
+    {
+      "id": "RD-1",
+      "type": "practice",
+      "text_en": "A clear written account of the amount requested, the move-out date and the response the person is seeking may help organise a request.",
+      "source": { "name": "General preparation guidance; not a statement of law" },
+      "status": "seed",
+      "last_checked": "2026-10-02",
+      "verified_by": null,
+      "verified_on": null,
+      "deadline_rule": null
+    }
+  ],
+  "checklist": [
+    {
+      "key": "deposit_payment_proof",
+      "label_en": "Proof of deposit payment",
+      "why_en": "Helps organise when and how much was paid.",
+      "alternatives_en": ["Bank or UPI statement", "A message acknowledging payment", "A witness or written chronology"]
+    },
+    {
+      "key": "rental_agreement",
+      "label_en": "Rental agreement, if available",
+      "why_en": "Can help clarify what the parties recorded.",
+      "alternatives_en": ["Messages discussing the tenancy", "Payment records", "A written timeline of events"]
+    }
+  ],
+  "red_flags": []
+}

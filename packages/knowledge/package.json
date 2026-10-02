@@ -1,0 +1,9 @@
+{
+  "name": "@kayda-sathi/knowledge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "test:safety": "node scripts/emergency-check.mjs"
+  }
+}
