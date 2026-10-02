@@ -6,6 +6,7 @@ import { Store, confirmedFacts, derivedAmounts, hashFacts, type Snapshot } from 
 import { packs, matchPack, emergency, publicResources } from './knowledge.js';
 import { APIError } from './errors.js';
 import { renderDraft,legalLint } from './draft-tools.js';
+import { retrieveContext } from './retrieval.js';
 
 function validateProposals(facts: Fact[], text: string) {
   const seen = new Set<string>();
@@ -52,11 +53,13 @@ export class Workflows {
   private async planWithSnapshot(user:string,input:{case_id:string;request_id:string;trigger:string;explain_lang:string},snapshot:Snapshot) {
     const facts = confirmedFacts(snapshot);
     const remaining=derivedAmounts(facts).amount_remaining;
-    const pack = packs.find(p => p.pack_id === snapshot.case.pack_id);
-    const allowed = pack?.claims.filter(c => c.status === 'verified' || (c.status === 'seed' && process.env.ALLOW_SEED_CLAIMS !== 'false')) ?? [];
-    const resources=publicResources().resources.filter(r => /nalsa|dlsa|tele_law/.test(r.id) && (r.status==='verified' || (pack && process.env.ALLOW_SEED_CLAIMS!=='false')));
+    const retrieval=retrieveContext(snapshot);
+    const pack = retrieval.ambiguous ? undefined : packs.find(p => p.pack_id === retrieval.topics[0]?.pack_id);
+    const allowed = packs.flatMap(p => p.claims).filter(c => retrieval.hits.some(h => h.kind==='claim' && h.id===c.id) && (!retrieval.ambiguous || c.type==='practice'));
+    const resources=publicResources().resources.filter(r => retrieval.hits.some(h => h.kind==='resource' && h.id===r.id));
+    const checklists=packs.flatMap(p => p.checklist.filter(d => retrieval.hits.some(h => h.kind==='checklist' && h.id===`${p.pack_id}:${d.key}`)));
     const selectionSchema = z.object({claim_ids:z.array(z.string()).max(10),resource_ids:z.array(z.string()).max(5).default([])}).strict();
-    const selection = await inferOrFallback(this.ai,selectionSchema,{facts,allowed_claims:allowed,allowed_resources:resources},() => ({claim_ids:[],resource_ids:resources.map(r => r.id)}),v => {
+    const selection = await inferOrFallback(this.ai,selectionSchema,{facts,retrieved_context:retrieval,allowed_claims:allowed,allowed_resources:resources},() => ({claim_ids:allowed.filter(c => c.type==='practice').map(c => c.id).slice(0,10),resource_ids:resources.map(r => r.id)}),v => {
       if (new Set(v.claim_ids).size!==v.claim_ids.length || new Set(v.resource_ids).size!==v.resource_ids.length || v.claim_ids.some(id => !allowed.some(c => c.id === id)) || v.resource_ids.some(id => !resources.some(r => r.id===id))) throw new Error('UNKNOWN_SOURCE'); return v;
     },40000);
     const unsafe = unsafeContact(snapshot);
@@ -66,16 +69,18 @@ export class Workflows {
       next_step:{title:unsafe ? 'Prepare safely and seek appropriate support' : snapshot.case.status==='resolved' ? 'Record the reported resolution' : remaining?.inr===0 ? 'Record returned payments and any unresolved issues' : 'Organise your evidence and requested response',why:'A clear record helps you explain the situation.',kind:'prepare',resource_id:null,draft_purpose:unsafe || snapshot.case.status==='resolved' || remaining?.inr===0 ? 'consultation_summary' : 'request'},
       what_may_apply:allowed.filter(c => selection.value.claim_ids.includes(c.id)).map(c => ({claim_id:c.id,text:c.text_en,applies_if:null})),
       steps:[{order:1,title:'Write a factual timeline',detail:'Record what happened and identify the records you have.',kind:'practice',resource_id:null}],
-      documents:pack ? pack.checklist.map(d => ({key:d.key,label:d.label_en,why:d.why_en,alternatives:d.alternatives_en})) : [
+      documents:checklists.length ? checklists.map(d => ({key:d.key,label:d.label_en,why:d.why_en,alternatives:d.alternatives_en})) : [
         {key:'chronology',label:'Chronology of events',why:'Helps explain the order of events.',alternatives:['Write approximate dates and mark what is uncertain.']},
         {key:'available_records',label:'Available records',why:'Organises records you already have.',alternatives:['Messages or correspondence','A written account of what happened']},
         {key:'consultation_questions',label:'Questions for consultation',why:'Clarifies what professional advice you need.',alternatives:['List the facts you are unsure about and the outcome you want.']}],
-      help:selection.value.resource_ids.map(id => ({resource_id:id,why_relevant:'A directory entry for information about legal assistance. Review its verification status before relying on contact details.'})),
+      help:selection.value.resource_ids.map(id => ({resource_id:id,why_relevant:retrieval.hits.find(h => h.kind==='resource' && h.id===id)!.reasons.join(' ')})),
       if_not_working:[{when:'You need advice on rights or a filing decision',then:'Ask a qualified legal professional to review the facts and documents.'}],
       uncertainties:[{text:selection.fallback ? 'AI guidance was unavailable; this is a preparation-only fallback.' : 'This preparation plan does not determine rights or predict an outcome.',impact:'Professional review may be needed.'},
         ...(!pack ? [{text:'Specific legal rules have not been established for this topic.',impact:'Use the preparation checklist and ask a qualified professional.'}] : []),
+        ...retrieval.warnings.map(text => ({text,impact:'Review the available context before relying on a result.'})),
+        ...retrieval.questions.map(q => ({text:q.text,impact:'Confirm this context to narrow a later plan.'})),
         ...(input.explain_lang === 'en' ? [] : [{text:'This preparation fallback is currently in English.',impact:'Translation is pending.'}])],
-      safety_notes:unsafe ? ['Avoid direct contact when it is unsafe. Use the Safety sheet for urgent support.'] : [],deadlines:[],
+      safety_notes:unsafe ? ['Avoid direct contact when it is unsafe. Use the Safety sheet for urgent support.'] : [],deadlines:[],retrieval,
     });
     const sources=allowed.filter(c => selection.value.claim_ids.includes(c.id)).map(c => ({claim_id:c.id,status:c.status,source_name:c.source.name,source_url:c.source.url ?? null,last_checked:c.last_checked}));
     const changeSummary=input.trigger==='update' ? 'Plan regenerated from the current confirmed facts.' : null;
@@ -85,7 +90,7 @@ export class Workflows {
       await tx.query('update public.cases set current_plan_revision=$1 where id=$2::uuid returning id',[row.revision,input.case_id]);
       if (input.trigger==='update') await tx.query(`update public.case_updates set plan_revision_after=$1
         where id=(select id from public.case_updates where case_id=$2::uuid and plan_revision_after is null order by created_at desc,id desc limit 1) returning id`,[row.revision,input.case_id]);
-      return planResponseSchema.parse({revision:row.revision,fallback_used:selection.fallback,content,
+      return planResponseSchema.parse({revision:row.revision,fallback_used:selection.fallback,content,retrieval,
         sources,
         change_summary:changeSummary});
     });

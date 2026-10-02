@@ -38,6 +38,11 @@ try {
   const created=await request('POST','/api/v1/cases',{original_account:'My landlord has not returned my rental deposit.'});
   assert.equal(created.statusCode,200); const caseId=created.json().id;
   assert.equal((await request('GET',`/api/v1/cases/${caseId}`,undefined,'bob')).statusCode,404);
+  assert.equal((await app.inject({method:'POST',url:'/api/v1/knowledge/retrieve',payload:{case_id:caseId}})).statusCode,401);
+  assert.equal((await request('POST','/api/v1/knowledge/retrieve',{case_id:caseId},'bob')).statusCode,404);
+  const retrieved=await request('POST','/api/v1/knowledge/retrieve',{case_id:caseId,query:'What records help with my rental deposit?'});
+  assert.equal(retrieved.statusCode,200);assert.equal(retrieved.json().topics[0].pack_id,'rent_deposit');
+  assert.equal((await request('POST','/api/v1/knowledge/retrieve',{case_id:caseId,query:'x'.repeat(1001)})).statusCode,400);
   assert.equal((await request('POST','/api/v1/ai/plan',{case_id:caseId,request_id:randomUUID(),trigger:'initial'})).statusCode,422);
   const intake=await request('POST','/api/v1/ai/intake',{case_id:caseId,request_id:randomUUID()});
   assert.equal(intake.statusCode,200); assert.equal(intake.json().fallback,true);
@@ -50,6 +55,9 @@ try {
   const planRequest={case_id:caseId,request_id:randomUUID(),trigger:'initial'};
   const plan=await request('POST','/api/v1/ai/plan',planRequest);
   assert.equal(plan.statusCode,200); assert.equal(plan.json().revision,1);
+  assert.equal(plan.json().retrieval.method,'lexical_bm25');
+  const storedPlan=(await request('GET',`/api/v1/cases/${caseId}`)).json().plans[0];
+  assert.deepEqual(storedPlan.content.retrieval,plan.json().retrieval);
   assert.equal((await request('POST','/api/v1/ai/plan',planRequest)).statusCode,409);
   const draft=await request('POST','/api/v1/ai/draft',{case_id:caseId,request_id:randomUUID(),purpose:'request',language:'en',tone:'polite'});
   assert.equal(draft.statusCode,200); const draftId=draft.json().draft.id;

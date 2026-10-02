@@ -43,4 +43,6 @@ Database request metadata contains status/error code/latency but no narrative, p
 
 ## Remaining P0 gates
 
+Context retrieval (RAG-1): authenticated `POST /knowledge/retrieve` accepts `{case_id,query?}` and returns the shared ranked retrieval response. Plans now automatically use and persist its source-filtered context. See [CONTEXT_RETRIEVAL.md](CONTEXT_RETRIEVAL.md) for confirmed location fields, directory metadata, seed handling, missing-context questions and UI integration. The current directory has no reviewed local offices; national results explicitly do not claim proximity. No embedding service or additional database migration is required.
+
 Hosted schema deployment and live Prisma connectivity need server database credentials. Live Anthropic structured-output smoke/evaluation needs the provider key. Storage cleanup needs its secret key and hosted race checks. Required teammate review of authorization/contracts/migrations is pending. Frontend auth/integration, phone testing and second-device reopen remain team handoffs. P1 voice/document work remains gated on P0.

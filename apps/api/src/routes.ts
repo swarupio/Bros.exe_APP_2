@@ -1,12 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { caseCreateSchema, factReviewSchema, factCreateSchema, intakeRequestSchema, planRequestSchema, draftRequestSchema, updateRequestSchema, draftSaveSchema, draftCheckSchema, uuidSchema, validFactValue } from '@kayda-sathi/shared';
+import { caseCreateSchema, factReviewSchema, factCreateSchema, intakeRequestSchema, planRequestSchema, draftRequestSchema, updateRequestSchema, draftSaveSchema, draftCheckSchema, uuidSchema, validFactValue,retrievalRequestSchema } from '@kayda-sathi/shared';
 import { Store, hashFacts, type CaseRow } from './store.js';
 import { Workflows } from './workflows.js';
 import type { Database } from './database.js';
 import type { Inference } from './ai.js';
 import { APIError } from './errors.js';
 import { checkReadiness } from './draft-tools.js';
+import { retrieveContext } from './retrieval.js';
 
 export function registerRoutes(app: FastifyInstance, options: { db?: Database; ai?: Inference; cleanup?: (user:string,caseId:string) => Promise<void> }) {
   const store=options.db ? new Store(options.db) : undefined;
@@ -44,6 +45,11 @@ export function registerRoutes(app: FastifyInstance, options: { db?: Database; a
   });
   app.post('/api/v1/cases/:id/facts/confirm',auth,async req => { const input=factReviewSchema.parse(req.body); return db().review(req.userId!,id(req.params),input.expected_rev,input.facts); });
   app.post('/api/v1/ai/intake',auth,async req => flows().intake(req.userId!,intakeRequestSchema.parse(req.body)));
+  app.post('/api/v1/knowledge/retrieve',auth,async req => {
+    const input=retrievalRequestSchema.parse(req.body);
+    const snapshot=await db().snapshot(req.userId!,input.case_id);
+    return retrieveContext(snapshot,input.query);
+  });
   app.post('/api/v1/ai/plan',auth,async req => flows().plan(req.userId!,planRequestSchema.parse(req.body)));
   app.post('/api/v1/ai/draft',auth,async req => flows().draft(req.userId!,draftRequestSchema.parse(req.body)));
   app.post('/api/v1/ai/update',auth,async req => flows().update(req.userId!,updateRequestSchema.parse(req.body)));

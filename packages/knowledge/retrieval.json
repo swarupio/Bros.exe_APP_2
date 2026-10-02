@@ -1,0 +1,13 @@
+{
+  "version": "0.1.0",
+  "topics": {
+    "rent_deposit": ["deposit", "tenancy", "landlady", "makan malik", "kiraya", "makaan malik", "किराया", "मकान मालिक", "जमानत राशि", "भाडे", "घरमालक", "अनामत"],
+    "consumer": ["broken purchase", "faulty", "shopkeeper", "online order", "खराब सामान", "दुकानदार", "खरीद", "खरेदी", "विक्रेता", "खराब वस्तू"],
+    "cyber_fraud": ["otp scam", "bank fraud", "stolen money", "hacked", "ऑनलाइन धोखाधड़ी", "साइबर", "फसवणूक", "सायबर", "upi scam"]
+  },
+  "resource_topics": {
+    "nalsa_15100": [],
+    "cybercrime_reporting": ["cyber_fraud"]
+  },
+  "safety_resources": ["india_emergency_112"]
+}

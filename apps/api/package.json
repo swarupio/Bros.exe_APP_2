@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx src/self-check.ts && tsx src/database-check.ts && tsx src/inference-check.ts && tsx src/hardening-check.ts",
+    "test": "tsx src/self-check.ts && tsx src/database-check.ts && tsx src/inference-check.ts && tsx src/hardening-check.ts && tsx src/retrieval-check.ts",
     "build": "prisma generate && tsc --noEmit",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",

@@ -24,6 +24,18 @@ export const intakeResponseSchema = z.object({
   }).strict()).max(3), restatement: z.string().max(1000), fallback: z.boolean().optional(), case_rev:z.number().int().positive().optional(),
 }).strict();
 
+export const retrievalRequestSchema=z.object({case_id:uuidSchema,query:z.string().trim().min(1).max(1000).optional()}).strict();
+export const retrievalResponseSchema=z.object({
+  method:z.literal('lexical_bm25'),corpus_version:z.string(),case_rev:z.number().int().positive(),
+  topics:z.array(z.object({pack_id:z.string(),score:z.number().nonnegative(),reasons:z.array(z.string())}).strict()),
+  ambiguous:z.boolean(),location:z.object({state:z.string().nullable(),district:z.string().nullable(),city:z.string().nullable()}).strict(),
+  hits:z.array(z.object({id:z.string(),kind:z.enum(['claim','checklist','resource']),pack_id:z.string().nullable(),text:z.string(),score:z.number().nonnegative(),
+    status:z.enum(['seed','verified']),source_name:z.string(),source_url:z.string().url().nullable(),last_checked:z.string(),reasons:z.array(z.string()),
+    coverage:z.enum(['topic','national','state','district','city']),phone:z.string().nullable()}).strict()),
+  questions:z.array(z.object({key:z.string(),text:z.string()}).strict()),warnings:z.array(z.string()),urgent:z.boolean(),
+}).strict();
+export type RetrievalResponse=z.infer<typeof retrievalResponseSchema>;
+
 export const planContentSchema = z.object({
   understood: z.object({ summary: z.string(), confirmed_fact_ids: z.array(uuidSchema), unknown_keys: z.array(z.string()) }).strict(),
   next_step: z.object({ title: z.string(), why: z.string(), kind: z.enum(["prepare", "contact", "file", "call", "consult"]), resource_id: z.string().nullable(), draft_purpose: z.string().nullable() }).strict(),
@@ -33,6 +45,7 @@ export const planContentSchema = z.object({
   help: z.array(z.object({ resource_id: z.string(), why_relevant: z.string() }).strict()),
   if_not_working: z.array(z.object({ when: z.string(), then: z.string() }).strict()),
   uncertainties: z.array(z.object({ text: z.string(), impact: z.string() }).strict()), safety_notes: z.array(z.string()),
+  retrieval:retrievalResponseSchema.optional(),
   deadlines: z.array(z.object({ claim_id: z.string(), due: z.string(), label: z.string() }).strict()),
 }).strict();
 export const planRequestSchema = z.object({
@@ -42,6 +55,7 @@ export const planRequestSchema = z.object({
 export const planResponseSchema = z.object({
   revision: z.number().int().positive(), fallback_used: z.boolean(), content: planContentSchema, change_summary: z.string().nullable(),
   sources: z.array(z.object({ claim_id:z.string(),status:z.enum(['seed','verified']),source_name:z.string(),source_url:z.string().url().nullable(),last_checked:z.string() }).strict()).optional(),
+  retrieval:retrievalResponseSchema.optional(),
 }).strict();
 
 export const draftSchema = z.object({ id: uuidSchema, version: z.number().int().positive(), body: z.string(), facts_hash: z.string() }).strict();
