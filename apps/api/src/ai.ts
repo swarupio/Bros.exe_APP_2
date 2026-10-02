@@ -45,7 +45,11 @@ export async function inferOrFallback<T>(ai: Inference | undefined, schema: z.Zo
       const timeout=new Promise<never>((_resolve,reject) => { timer=setTimeout(() => reject(new Error('PROVIDER_TIMEOUT')),remaining); });
       const value=await Promise.race([ai.generate(schema,context,{timeoutMs:remaining}),timeout]);
       return {value:validate(schema.parse(value)),fallback:false};
-    } catch { /* Retry once within the total time budget; never log user/provider content. */ }
+    } catch (error) {
+      // A timed-out call consumes its attempt budget even if the timer fires early.
+      if (error instanceof Error && error.message==='PROVIDER_TIMEOUT') break;
+      /* Retry once within the total time budget; never log user/provider content. */
+    }
     finally { if (timer) clearTimeout(timer); }
   }
   return { value:validate(schema.parse(fallback())), fallback:true };
