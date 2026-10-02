@@ -28,6 +28,9 @@ const negatives = [
   "त्याने मला धमकी दिली नाही.",
   "धमकी नव्हती.",
   "I am writing a school essay about law.",
+  "मेरे पास बैंक के दस्तावेज हैं।",
+  "मेरी तनख्वाह नहीं मिली और मेरे पास रिकॉर्ड हैं।",
+  "मेरे product में defect है और seller जवाब नहीं दे रहा है।",
 ];
 
 for (const prompt of positives) assert.equal(detectEmergency(prompt, terms).urgent, true, `Expected urgent: ${prompt}`);

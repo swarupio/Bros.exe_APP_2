@@ -1,5 +1,5 @@
 const normalize = (value) =>
-  value.normalize("NFKC").toLowerCase().replace(/[’‘]/gu, "'").replace(/[^\p{L}\p{N}']+/gu, " ").trim().split(/\s+/u).filter(Boolean);
+  value.normalize("NFKC").toLowerCase().replace(/[’‘]/gu, "'").replace(/[^\p{L}\p{M}\p{N}']+/gu, " ").trim().split(/\s+/u).filter(Boolean);
 
 const hasPhrase = (words, phrase) => {
   for (let i = 0; i <= words.length - phrase.length; i += 1) {

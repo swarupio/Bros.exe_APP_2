@@ -3,12 +3,18 @@ import {
   draftRequestSchema, factSchema, healthResponseSchema, intakeRequestSchema,
   intakeResponseSchema, planRequestSchema,
 } from "@kayda-sathi/shared";
-import { mockIntake } from "./fixtures.js";
+import { mockIntake,contractFixtures } from "./fixtures.js";
 import { createApp } from "./server.js";
 
 const caseId = "00000000-0000-4000-8000-000000000001";
 const requestId = "00000000-0000-4000-8000-000000000002";
 const response = mockIntake(caseId);
+const scenarios=contractFixtures(caseId);
+assert.equal(Object.keys(scenarios).length,9);
+assert.equal(scenarios.conflict.facts.length,2);
+assert.equal(scenarios.general_plan.content.what_may_apply.length,0);
+assert.equal(scenarios.sourced_plan.sources?.[0].status,'seed');
+assert.equal(scenarios.update_diff.facts?.[0].status,'proposed');
 assert.equal(mockIntake(caseId).facts[0]?.status, "proposed");
 assert.equal(mockIntake(caseId).fallback, true);
 assert.throws(() => mockIntake("not-a-uuid"));

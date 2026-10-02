@@ -3,7 +3,38 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "tsx watch src/server.ts", "start": "tsx src/server.ts", "typecheck": "tsc --noEmit", "test": "tsx src/self-check.ts" },
-  "dependencies": { "@kayda-sathi/shared": "workspace:*", "fastify": "^5.6.2", "zod": "^4.1.12" },
-  "devDependencies": { "@types/node": "^24.7.2", "tsx": "^4.20.6", "typescript": "^5.9.3" }
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx src/self-check.ts && tsx src/database-check.ts && tsx src/inference-check.ts && tsx src/hardening-check.ts",
+    "build": "prisma generate && tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:apply": "tsx scripts/apply-migrations.ts",
+    "check:env": "tsx scripts/check-env.ts",
+    "check:runtime": "tsx src/runtime-check.ts",
+    "eval": "tsx scripts/evaluate.ts",
+    "eval:live": "tsx scripts/evaluate.ts --live"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@fastify/rate-limit": "^11.2.0",
+    "@kayda-sathi/shared": "workspace:*",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@supabase/supabase-js": "^2.117.2",
+    "dotenv": "^18.0.5",
+    "fastify": "^5.6.2",
+    "pg": "^8.23.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^24.7.2",
+    "@types/pg": "^8.23.1",
+    "prisma": "^7.10.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
 }

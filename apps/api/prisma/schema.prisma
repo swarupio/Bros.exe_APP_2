@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+// SQL migrations remain authoritative for Supabase RLS, triggers and auth FKs.
+// These mappings support typed access; do not use db push to replace the schema.
+model Case {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String   @db.Uuid
+  title                 String   @default("New case")
+  original_account      String
+  original_lang         String?
+  issue_tags            String[] @default([])
+  pack_id               String?
+  urgency               String   @default("none")
+  status                String   @default("open")
+  current_plan_revision Int?
+  rev                   Int      @default(1)
+  deleted_at            DateTime? @db.Timestamptz
+  created_at            DateTime @default(now()) @db.Timestamptz
+  updated_at            DateTime @default(now()) @db.Timestamptz
+  @@map("cases")
+}
+model Fact {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  case_id       String @db.Uuid
+  key           String
+  label         String
+  kind          String
+  value         Json?
+  raw_text      String?
+  status        String
+  source_type   String
+  source_ref    Json?
+  supersedes_id String? @db.Uuid
+  retired_at    DateTime? @db.Timestamptz
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @default(now()) @db.Timestamptz
+  @@map("facts")
+}
+model PlanRevision {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  case_id        String @db.Uuid
+  revision       Int
+  trigger        String
+  facts_hash     String
+  content        Json
+  sources        Json @default("[]")
+  change_summary Json?
+  pack_version   String?
+  model          String?
+  fallback_used  Boolean @default(false)
+  created_at     DateTime @default(now()) @db.Timestamptz
+  @@unique([case_id, revision])
+  @@map("plan_revisions")
+}
+model Draft {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  case_id        String @db.Uuid
+  purpose        String
+  language       String
+  version        Int
+  save_token     Int @default(1)
+  body           String
+  facts_hash     String
+  plan_revision  Int?
+  edited_by_user Boolean @default(false)
+  status         String @default("draft_prepared")
+  is_current     Boolean @default(true)
+  created_at     DateTime @default(now()) @db.Timestamptz
+  updated_at     DateTime @default(now()) @db.Timestamptz
+  @@unique([case_id,purpose,version])
+  @@map("drafts")
+}
+
+model Profile {
+  id String @id @db.Uuid
+  display_name String?
+  ui_lang String @default("en")
+  explain_lang String @default("en")
+  draft_lang String @default("en")
+  hide_previews Boolean @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @db.Timestamptz
+  @@map("profiles")
+}
+model Document {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  case_id String @db.Uuid
+  storage_path String @unique
+  file_name String
+  mime_type String
+  size_bytes Int
+  sha256 String?
+  status String @default("uploading")
+  error_code String?
+  pages_total Int?
+  pages_read Int?
+  analysis Json?
+  created_at DateTime @default(now()) @db.Timestamptz
+  @@unique([case_id,id])
+  @@map("documents")
+}
+model ChecklistState {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  case_id String @db.Uuid
+  item_key String
+  status String
+  document_id String? @db.Uuid
+  updated_at DateTime @default(now()) @db.Timestamptz
+  @@unique([case_id,item_key])
+  @@map("checklist_state")
+}
+model CaseUpdate {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  case_id String @db.Uuid
+  outcome String
+  note String?
+  document_id String? @db.Uuid
+  plan_revision_after Int?
+  created_at DateTime @default(now()) @db.Timestamptz
+  @@map("case_updates")
+}
+model AIRequest {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  request_id String @unique @db.Uuid
+  user_id String @db.Uuid
+  case_id String? @db.Uuid
+  kind String
+  status String
+  error_code String?
+  latency_ms Int?
+  tokens_in Int?
+  tokens_out Int?
+  created_at DateTime @default(now()) @db.Timestamptz
+  @@map("ai_requests")
+}
+model FeedbackReport {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id String @db.Uuid
+  case_id String? @db.Uuid
+  target_type String
+  target_ref String?
+  reason String
+  created_at DateTime @default(now()) @db.Timestamptz
+  @@map("feedback_reports")
+}

@@ -12,7 +12,9 @@ export function registerAuth(app: FastifyInstance, verifyToken?: AuthVerifier): 
   app.decorate("requireAuth", async (request, reply) => {
     if (!verifyToken) return reply.code(503).send({ error: { code: "AUTH_NOT_CONFIGURED", message: "Authentication is not configured", retryable: false } });
     const match = /^Bearer\s+(.+)$/i.exec(request.headers.authorization ?? "");
-    const userId = match ? await verifyToken(match[1]) : null;
+    let userId: string | null = null;
+    try { userId = match ? await verifyToken(match[1]) : null; }
+    catch { return reply.code(503).send({ error: { code: 'AUTH_UNAVAILABLE', message: 'Authentication is temporarily unavailable', retryable: true } }); }
     if (!userId) return reply.code(401).send({ error: { code: "UNAUTHENTICATED", message: "Sign in to continue", retryable: false } });
     request.userId = userId;
   });

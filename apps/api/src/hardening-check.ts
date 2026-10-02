@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { z } from 'zod';
+import { caseCreateSchema,factReviewSchema,draftCompositionSchema } from '@kayda-sathi/shared';
+import { checkReadiness,renderDraft,legalLint } from './draft-tools.js';
+import { inferOrFallback,providerSchema } from './ai.js';
+import { cleanupEvidence } from './storage.js';
+import { hashFacts,confirmedFacts,type Snapshot,type FactRow } from './store.js';
+import { emergency,matchPack } from './knowledge.js';
+
+const fact=(key:string,kind:FactRow['kind'],value:unknown):FactRow => ({id:randomUUID(),key,label:key,kind,value,status:'confirmed',raw_text:null,source_type:'user'});
+const snapshot:Snapshot={case:{id:randomUUID(),user_id:randomUUID(),title:'Rent deposit',original_account:'A rental deposit has not been returned.',rev:1,pack_id:'rent_deposit',urgency:'none',status:'open',deleted_at:null,current_plan_revision:null},facts:[fact('amount_paid','amount',{inr:50000}),fact('amount_returned','amount',{inr:15000})]};
+const base={purpose:'request',facts_hash:hashFacts(snapshot.facts)};
+const check=(body:string,docs=0) => checkReadiness({...base,body},snapshot,docs);
+assert.equal(caseCreateSchema.safeParse({original_account:' '.repeat(30)}).success,false);
+const reviewFact={id:randomUUID(),key:'amount_paid',label:'Paid',kind:'amount',value:{inr:50000},status:'confirmed'};
+assert.equal(factReviewSchema.safeParse({expected_rev:1,facts:[reviewFact,reviewFact]}).success,false);
+assert.equal(check('').ready,false);
+assert.ok(check('To Someone\nRequested response: Refund\nINR 999').issues.some(i => i.code==='AMOUNT_MISMATCH'));
+assert.ok(check('To Someone\nRequested response: Refund\namount_paid: INR 35,000').issues.some(i => i.code==='AMOUNT_MISMATCH'));
+assert.ok(check('To Someone\nRequested response: Refund\nThe receipt is attached.').issues.some(i => i.code==='MISSING_ATTACHMENT'));
+assert.equal(check('To Someone\nRequested response: Refund\nThe receipt is attached.',1).ready,true);
+assert.equal(check('To Someone\nRequested response: Return INR 35,000').ready,true);
+assert.ok(check('A letter with no recipient or requested outcome').issues.some(i => i.code==='MISSING_OUTCOME'));
+assert.equal(check('To Someone\nRequested response: Refund\nI will hurt you.').ready,false);
+assert.equal(legalLint('You definitely win under Section 999.').length,2);
+const unknown={...fact('move_out_date','date',null),status:'unknown' as const};
+assert.ok(renderDraft({...snapshot,facts:[...snapshot.facts,unknown]},snapshot.facts,'request','polite').placeholders.includes('move_out_date'));
+const conflicting={...snapshot.facts[0],id:randomUUID(),value:{inr:60000},status:'proposed' as const};
+assert.throws(() => confirmedFacts({...snapshot,facts:[...snapshot.facts,conflicting]}),/FACT_CONFLICT/);
+assert.equal(matchPack('My parent and I have different views on inheritance.'),null);
+assert.equal(emergency('Hypothetically, someone threatened a fictional character.').urgent,false);
+assert.equal(emergency('Hypothetically, someone threatened me, but actually this is happening right now.').urgent,true);
+const compiled=JSON.stringify(providerSchema(draftCompositionSchema));
+assert.ok(!compiled.includes('maxItems')); assert.ok(!compiled.includes('minLength'));
+const named=providerSchema(z.object({minimum:z.string().min(1)})) as {properties:Record<string,unknown>};
+assert.ok(named.properties.minimum);
+let calls=0;
+const timeout=await inferOrFallback({generate:async <T>() => { calls++; return new Promise<T>(() => {}); }},z.object({ok:z.boolean()}),{},() => ({ok:false}),v => v,10);
+assert.equal(timeout.fallback,true); assert.equal(calls,1);
+
+const paths=new Set(['alice/case/one','alice/case/sub/two']);
+await cleanupEvidence({list:async prefix => {
+  const files=[...paths].filter(p => p.startsWith(`${prefix}/`));
+  return {data:[...new Set(files.map(p => p.slice(prefix.length+1).split('/')[0]))].map(name => ({name,id:paths.has(`${prefix}/${name}`) ? name : null})),error:null};
+},remove:async files => { files.forEach(f => paths.delete(f)); return {error:null}; }},'alice','case');
+assert.equal(paths.size,0);
+await assert.rejects(cleanupEvidence({list:async () => ({data:[],error:new Error('private storage failure')}),remove:async () => ({error:null})},'alice','case'),/CLEANUP_FAILED/);
+const fixtures=JSON.parse(await readFile(new URL('../../../tools/eval/cases.json',import.meta.url),'utf8')) as {text:string;pack:string|null;urgent:boolean}[];
+assert.equal(fixtures.length,40);
+for (const f of fixtures) { assert.equal(matchPack(f.text),f.pack,f.text); assert.equal(emergency(f.text).urgent,f.urgent,f.text); }
+console.log('Readiness, input/conflict guards, deadline budget, schema compatibility, nested storage cleanup and 40-case deterministic regression passed');
