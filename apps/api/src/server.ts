@@ -48,7 +48,7 @@ export function createApp(options: { verifyToken?: AuthVerifier; mockAI?: boolea
         headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
         signal: AbortSignal.timeout(20_000),
         body: JSON.stringify({
-          model: process.env.GROQ_CHAT_MODEL ?? "llama-3.3-70b-versatile",
+          model: process.env.GROQ_CHAT_MODEL ?? "openai/gpt-oss-20b",
           temperature: 0.25,
           max_completion_tokens: 500,
           messages: [
@@ -88,7 +88,7 @@ export function createApp(options: { verifyToken?: AuthVerifier; mockAI?: boolea
       });
       if (!response.ok) return reply.code(502).send({ error: { code: "STT_UNAVAILABLE", message: "Voice typing could not transcribe this recording.", retryable: true } });
       const payload = await response.json() as { text?: unknown };
-      const result = fastTranscriptionResponseSchema.safeParse(payload);
+      const result = fastTranscriptionResponseSchema.safeParse({ text: payload.text });
       if (!result.success) return reply.code(502).send({ error: { code: "STT_INVALID_RESPONSE", message: "Voice typing returned no text.", retryable: true } });
       return reply.send(result.data);
     } catch {
