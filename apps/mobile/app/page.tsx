@@ -1,5 +1,6 @@
-import { AppView } from "@/components/app-view";
+import { AppShell } from "@/components/app-shell";
+import { CasesScreen } from "@/components/screens/cases-screen";
 
 export default function Home() {
-  return <AppView screen="cases" />;
+  return <AppShell><CasesScreen/></AppShell>;
 }

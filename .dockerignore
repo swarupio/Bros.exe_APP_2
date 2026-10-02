@@ -1,0 +1,8 @@
+.git
+**/node_modules
+**/.env*
+!**/.env.example
+**/.next
+**/out
+apps/mobile/android
+*.log

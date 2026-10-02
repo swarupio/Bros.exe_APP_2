@@ -1,19 +1,31 @@
-import { createClient } from '@supabase/supabase-js';
-let client: ReturnType<typeof createClient> | undefined;
-export function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) throw new Error('Supabase is not configured');
-  return client ??= createClient(url, key);
+import { currentUser, getAccessToken } from "../components/supabase-auth";
+
+export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1`).replace(/\/$/, "");
+
+const messages: Record<string, string> = {
+  DATABASE_NOT_CONFIGURED: "Case saving is not connected yet. Your entered text is kept on this device.",
+  STALE_CASE: "This case changed on another device. Reload and review the latest facts.",
+  DRAFT_CONFLICT: "Another edit was saved first. Your text is preserved below; load the saved version before deciding what to keep.",
+  FACTS_NOT_CONFIRMED: "Confirm at least one fact before preparing a plan or draft.",
+  FACT_CONFLICT: "Choose one value or mark it unknown for each conflicting fact.",
+  UNAUTHENTICATED: "Sign in to continue.",
+  UNSAFE_DIRECT_CONTACT: "Use a consultation summary when direct contact may be unsafe.",
+  STORAGE_CLEANUP_PENDING: "The case is hidden. File cleanup is pending; retry deletion when the service is available.",
+};
+export class ApiRequestError extends Error {
+  constructor(public code: string, public status: number, message?: string) { super(messages[code] ?? message ?? "Could not complete the request. Try again."); }
 }
-export async function apiRequest<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {
-  const { data: { session } } = await getSupabase().auth.getSession();
-  if (!session) throw new Error('Sign in to continue');
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080'}/api/v1${path}`, {
-    method, headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+export async function apiRequest<T>(path: string, body?: unknown, method = "POST"): Promise<T> {
+  const userId = currentUser()?.id;
+  const token = await getAccessToken();
+  if (!token || !userId || currentUser()?.id !== userId) throw new ApiRequestError("UNAUTHENTICATED", 401);
+  const response = await fetch(`${API_BASE}${path}`, {
+    method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    signal: AbortSignal.timeout(60_000),
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.code ?? 'REQUEST_FAILED');
+  if (currentUser()?.id !== userId) throw new ApiRequestError("UNAUTHENTICATED", 401);
+  if (!response.ok) throw new ApiRequestError(result.error?.code ?? "REQUEST_FAILED", response.status, result.error?.message);
   return result as T;
 }

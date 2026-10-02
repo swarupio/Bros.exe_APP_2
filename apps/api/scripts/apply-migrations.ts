@@ -26,6 +26,10 @@ try {
       await client.query('insert into public.app_schema_migrations(name,sha256) values($1,$2)',[name,sha]);
       await client.query('commit');
       console.log(`Applied ${name}`);
-    } catch { await client.query('rollback'); throw new Error(`Migration failed: ${name}; inspect database configuration without exposing credentials`); }
+    } catch (error) {
+      await client.query('rollback');
+      const message = error instanceof Error ? error.message : 'unknown database error';
+      throw new Error(`Migration failed: ${name}; ${message}`);
+    }
   }
 } finally { await client.end(); }

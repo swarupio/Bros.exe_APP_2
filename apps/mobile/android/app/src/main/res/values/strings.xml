@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kayda Sathi</string>
+    <string name="title_activity_main">Kayda Sathi</string>
+    <string name="package_name">com.kaydasathi.app</string>
+    <string name="custom_url_scheme">com.kaydasathi.app</string>
+</resources>

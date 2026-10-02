@@ -1,5 +1,6 @@
-import { AppView } from "@/components/app-view";
+import { AppShell } from "@/components/app-shell";
+import { PlanScreen } from "@/components/screens/plan-screen";
 
 export default function CaseWorkspace() {
-  return <AppView screen="workspace" />;
+  return <AppShell><PlanScreen/></AppShell>;
 }

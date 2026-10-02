@@ -8,7 +8,7 @@ Deliver the five-hour P0: **sign in → describe → confirm facts → get an ev
 
 The team has confirmed these PRD overrides: frontend is **Next.js + Capacitor** instead of Vite; Apple/SwiftUI is a **visual direction**, not an iOS target; Aditya owns integration/content/safety/native packaging, Swarup owns backend/shared contracts/AI/database, and Gururaj owns frontend. Anthropic is the AI provider. Keep the P1 work behind the P0 gate.
 
-The AI assists with issue classification, proposed fact extraction, adaptive questions, preparation plans, drafts, and update interpretation. It does not train a model, invent legal rules, decide the truth of a user's facts, make legal outcome predictions, or replace source validation. Unknown legal topics use general preparation and referral guidance.
+The AI assists with issue classification, proposed fact extraction, adaptive questions, preparation plans, drafts, and update interpretation. It does not train a model, invent legal rules, decide the truth of a user's facts, make legal outcome predictions, or replace source validation. Unknown legal topics use general preparation and referral guidance. **Current user-approved override:** Fast Track chat and voice transcription use Groq, with `GROQ_API_KEY` held only by the API server. This does not yet replace the planned provider for future plan/draft workflows.
 
 The complete source PRD, including requirements, architecture, schemas, endpoint payloads, acceptance criteria, and test cases, is [`Kayda_Sathi_Final_PRD.md`](Kayda_Sathi_Final_PRD.md). This plan records the agreed adaptations and executable division of work; PRD details remain applicable unless an override is listed above or the implementation contract below is more specific.
 
@@ -45,6 +45,7 @@ Target times are hours after the hackathon build timer starts; they are checkpoi
 | A-005 | Aditya | P0 | P0 gate on real phone: full live journey, explicit confirmed facts, reviewable plan/draft, update-generated revision, second-device reopen. | A-003/G-005/S-005 live integrations. Target 3:15. | ready |
 | A-006 | Aditya | P0 | Set `webDir` to Next.js `out`; Capacitor Android sync, install and smoke test on a real device; hand off installed debug APK. | P0 gate and frozen web shell. Build target 4:20. | ready |
 | S-006 | Swarup | P0 | Real HTTP smoke, provider schema compatibility, one retry inside deadline budget, four-call concurrency cap, 128 KiB body guard and 40-case deterministic evaluation runner/report. Workspace build/typechecks/tests plus knowledge/safety pass locally. Node engine corrected for Prisma 7. | DATABASE_URL, ANTHROPIC_API_KEY and storage secret missing; live evaluation/hosted isolation/phone release gate pending. `eval:live` is ready to run once configured. | **active** |
+
 | G-006 | Gururaj | P0 | WebView/device responsive and keyboard/accessibility pass; critical frontend fixes and live deployed-web fallback. | G-005 and A-006 feedback. | ready |
 | A-007 | Aditya | P0 | Two-phone rehearsal, release/known-limits note, demo recording fallback, final workboard status. | A-005/A-006/S-006/G-006; before hour 5. | ready |
 
@@ -54,9 +55,9 @@ At `T+3:15`, stop optional work if P0 has not passed. Feature freeze is `T+3:45`
 
 | ID | Owner | Work | Dependency / decision |
 |---|---|---|---|
-| P1-001 | Swarup | Sarvam STT endpoint with file/timeout validation and no audio persistence. | P0 green; configured provider access verified. |
-| P1-002 | Aditya | Browser recorder, consent/explanation, 30-second cap, editable transcript confirmation. | P0 green; STT contract agreed. |
-| P1-003 | Gururaj | Wire confirmed speech transcript into text intake. | P1-001 and P1-002. Hide the entry point at freeze if incomplete. |
+| P1-001 | Swarup / integration | Groq Whisper STT endpoint with file/timeout validation and no audio persistence. | Fast Track endpoint exists; provider key and runtime/API self-check still required. |
+| P1-002 | Aditya | Browser recorder, clear provider disclosure, size/duration limits, editable transcript confirmation. | Recorder and transcript insertion exist; duration cap and native Android microphone verification remain. |
+| P1-003 | Gururaj / integration | Wire confirmed speech transcript into Fast Track and Normal Mode text intake. | Both screens are wired; full device verification remains. |
 
 Other P1 backlog: document analysis/upload and provenance; Hindi/Marathi UI; PDF export; account data deletion; cross-device edit-conflict dialogue; event timeline; feedback. Assign each task to its owner above before anyone starts it. P2/post-hackathon: TTS, reminders, shared-phone protections, password reset, family access, state-specific packs, advanced offline case storage. Do not represent deferred features as implemented.
 
@@ -136,3 +137,4 @@ Supabase + Prisma continuation: supplied public config saved only in ignored env
 Earlier foundation check-in (superseded by the continuation above): S-002 SQL was authored before local database validation and workspace dependencies were available. No P0 completion claim was made.
 
 Earlier foundation/design check-in (superseded by the checks above): The Git remote's starting `main` had only the original workboard. This foundation adds workspace manifests, a statically exported Next.js local demo, an initial Fastify health/API contract slice, knowledge packs, data checks, [`DESIGN.md`](DESIGN.md), and ten separate portrait screen references. Frontend typecheck/static build and knowledge/emergency self-checks pass. Registry access failed in this environment, so the API self-check, API typecheck, and full pnpm workspace build have not run. Auth-backed persistence, live AI, and P0 integration remain incomplete; passing the shell build is not the P0 gate. Keep the local PRD and contributor guide with the implementation push so teammates have its source requirements and build commands.
+
