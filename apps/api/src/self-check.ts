@@ -83,7 +83,7 @@ try {
 const groqApp = createApp({ groqApiKey: "test-only", groqFetch: async (url, init) => {
   if (String(url).includes("/audio/transcriptions")) {
     assert.ok(init?.body instanceof FormData);
-    return new Response(JSON.stringify({ text: "माझ्या बँकेत मदत हवी आहे" }), { status: 200 });
+    return new Response(JSON.stringify({ text: "माझ्या बँकेत मदत हवी आहे", x_groq: { id: "provider-metadata" } }), { status: 200 });
   }
   assert.equal(String(url), "https://api.groq.com/openai/v1/chat/completions");
   const body = JSON.parse(String(init?.body)) as { messages: Array<{ content: string }> };
